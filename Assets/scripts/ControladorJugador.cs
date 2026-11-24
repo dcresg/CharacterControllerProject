@@ -4,13 +4,23 @@ using UnityEngine.InputSystem;
 
 public class ControladorJugador : MonoBehaviour
 {
+    [Header("Referencias")]
     [SerializeField] private Transform Pivote;
     [SerializeField] private Camera camara;
     [SerializeField] private GameObject modelo;
+
     [Header("Movimiento")]
     [SerializeField] private float velocidad = 5;
     [SerializeField] private float alturaSalto = 1.5f;
     [SerializeField] private float gravedad = -20f;
+    [SerializeField] private float sensibilidadMouse = 0.12f;
+
+    [Header("Camara")]
+    [SerializeField] private Vector3 posicionTercera = new Vector3(0.65f, 0.15f, -3f);
+    [SerializeField] private Vector3 posicionApuntado = new Vector3(0.55f, 0.1f, -1.7f);
+    [SerializeField] private float suavizado = 10f;
+
+    private bool primeraPersona = false;
 
     private float velocidadVertical;
     private float inclinacion = 0f;
@@ -30,8 +40,8 @@ public class ControladorJugador : MonoBehaviour
         mover = input.actions["Move"];
         saltar = input.actions["Jump"];
         mirar = input.actions["Look"];
-        //apuntar = input.actions["Point"];
-       // cambiarvista = input.actions["ChangeView"];
+        apuntar = input.actions["Point"];
+        cambiarvista = input.actions["ChangeView"];
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -40,6 +50,11 @@ public class ControladorJugador : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (cambiarvista.WasPressedThisFrame()) 
+        {
+            primeraPersona = !primeraPersona;
+            modelo.SetActive(!primeraPersona);
+        }
         GirarCamara();
         MoverPersonaje();
         ActualizarCamara();
@@ -51,7 +66,7 @@ public class ControladorJugador : MonoBehaviour
 
         Debug.Log(deltaMouse);
 
-        transform.Rotate(Vector3.up * deltaMouse.x);
+        transform.Rotate(Vector3.up * deltaMouse.x * sensibilidadMouse);
 
         inclinacion -= deltaMouse.y;
 
@@ -86,6 +101,26 @@ public class ControladorJugador : MonoBehaviour
 
     void ActualizarCamara()
     {
+        Vector3 destino;
 
+        if (primeraPersona)
+        {
+            destino = Vector3.zero;
+        }
+
+        else 
+        {
+            destino = posicionTercera;
+        }
+
+        camara.transform.localPosition = Vector3.Lerp(camara.transform.localPosition, destino, suavizado * Time.deltaTime);
+    }
+
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if(hit.gameObject.tag == "cubo") 
+        {
+            Destroy(hit.gameObject);
+        }
     }
 }
